@@ -1,0 +1,7 @@
+webdriver_manager
+selenium
+aiohttp
+beautifulsoup4
+rich
+google-generativeai
+jinja2

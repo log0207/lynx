@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lynx Security Report - {{ target }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #09090b;
+            --bg-card: #18181b;
+            --bg-hover: #27272a;
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --accent: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.15);
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --low: #10b981;
+            --border: #27272a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .glass {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        header {
+            padding: 6rem 0 4rem;
+            text-align: center;
+            position: relative;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            height: 400px;
+            background: radial-gradient(circle at center, var(--accent-glow) 0%, transparent 70%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+            background: linear-gradient(to bottom right, #fff, #a1a1aa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .meta {
+            display: inline-flex;
+            gap: 2rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 1.5rem;
+            padding: 0.75rem 1.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 9999px;
+            border: 1px solid var(--border);
+        }
+
+        .meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 4rem;
+        }
+
+        .stat-card {
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-value {
+            font-size: 3.5rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .p1 {
+            color: var(--danger);
+        }
+
+        .p1::before {
+            background: var(--danger);
+        }
+
+        .p2 {
+            color: var(--warning);
+        }
+
+        .p2::before {
+            background: var(--warning);
+        }
+
+        .p3 {
+            color: var(--info);
+        }
+
+        .p3::before {
+            background: var(--info);
+        }
+
+        .p4 {
+            color: var(--low);
+        }
+
+        .p4::before {
+            background: var(--low);
+        }
+
+        /* Findings */
+        .findings-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .finding-card {
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .finding-header {
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            background: var(--bg-card);
+        }
+
+        .finding-header:hover {
+            background: var(--bg-hover);
+        }
+
+        .finding-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: var(--text-primary);
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #fff;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .bg-P1 {
+            background: var(--danger);
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
+        }
+
+        .bg-P2 {
+            background: var(--warning);
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
+        }
+
+        .bg-P3 {
+            background: var(--info);
+        }
+
+        .bg-P4 {
+            background: var(--low);
+        }
+
+        .finding-body {
+            padding: 2rem;
+            border-top: 1px solid var(--border);
+            display: none;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .finding-body.open {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 3rem;
+            margin-bottom: 2rem;
+        }
+
+        .field {
+            margin-bottom: 1.5rem;
+        }
+
+        .field-label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.05em;
+        }
+
+        .field-content {
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        /* Table Styling */
+        .table-container {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem 1.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+            vertical-align: top;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .url-cell {
+            color: var(--accent);
+            font-family: 'JetBrains Mono', monospace;
+            word-break: break-all;
+        }
+
+        .payload-cell {
+            font-family: 'JetBrains Mono', monospace;
+            color: #fca5a5;
+            background: rgba(239, 68, 68, 0.1);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            display: inline-block;
+            font-size: 0.85rem;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 4rem 0;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-top: 4rem;
+            border-top: 1px solid var(--border);
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Lynx Security Report</h1>
+            <div class="meta">
+                <span>Target: {{ target }}</span>
+                <span>•</span>
+                <span>{{ date }}</span>
+                <span>•</span>
+                <span>v{{ version }}</span>
+            </div>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card glass p1">
+                <span class="stat-value">{{ stats.P1 }}</span>
+                <span class="stat-label">Critical</span>
+            </div>
+            <div class="stat-card glass p2">
+                <span class="stat-value">{{ stats.P2 }}</span>
+                <span class="stat-label">High</span>
+            </div>
+            <div class="stat-card glass p3">
+                <span class="stat-value">{{ stats.P3 }}</span>
+                <span class="stat-label">Medium</span>
+            </div>
+            <div class="stat-card glass p4">
+                <span class="stat-value">{{ stats.P4 }}</span>
+                <span class="stat-label">Info</span>
+            </div>
+        </div>
+
+        <section class="findings-section">
+            {% if not grouped_findings %}
+            <div class="glass" style="padding: 4rem; text-align: center; border-radius: 12px;">
+                <h3 style="color: var(--low); font-size: 1.5rem; margin-bottom: 1rem;">No Vulnerabilities Found</h3>
+                <p style="color: var(--text-secondary);">Great job! No security issues were detected during this scan.
+                </p>
+            </div>
+            {% else %}
+            {% for type, findings in grouped_findings.items() %}
+            {% set first = findings[0] %}
+            {% set meta = vuln_db.get(type, vuln_db['DEFAULT']) %}
+
+            <div class="finding-card glass">
+                <div class="finding-header" onclick="toggleFinding(this)">
+                    <div class="finding-title">
+                        <span class="badge bg-{{ first.severity }}">{{ first.severity }}</span>
+                        {{ type }}
+                        <span
+                            style="color: var(--text-secondary); font-size: 0.9rem; font-weight: normal; margin-left: 0.5rem;">({{
+                            findings|length }} instances)</span>
+                    </div>
+                    <span style="color: var(--text-secondary); transition: transform 0.2s;">▼</span>
+                </div>
+                <div class="finding-body">
+                    <div class="grid-2">
+                        <div>
+                            <div class="field">
+                                <span class="field-label">Description</span>
+                                <div class="field-content">{{ meta.summary }}</div>
+                            </div>
+                            <div class="field">
+                                <span class="field-label">Remediation</span>
+                                <div class="field-content">{{ meta.remediation }}</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="field">
+                                <span class="field-label">Impact</span>
+                                <div class="field-content">{{ meta.impact_cat }}</div>
+                            </div>
+                            <div class="field">
+                                <span class="field-label">References</span>
+                                <div class="field-content" style="font-size: 0.85rem;">{{ meta.references }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <span class="field-label">Affected Instances</span>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50%;">Vulnerable URL</th>
+                                        <th style="width: 50%;">Payload Used</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for f in findings %}
+                                    <tr>
+                                        <td><a href="{{ f.url }}" target="_blank" class="url-cell">{{ f.url }}</a></td>
+                                        <td>
+                                            {% if f.payload %}
+                                            <span class="payload-cell">{{ f.payload }}</span>
+                                            {% else %}
+                                            <span style="color: var(--text-secondary); font-style: italic;">{{ f.details
+                                                }}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% endif %}
+        </section>
+
+        <footer>
+            <p>Generated by Lynx VAPT Scanner</p>
+        </footer>
+    </div>
+
+    <script>
+        function toggleFinding(header) {
+            const body = header.nextElementSibling;
+            const isOpen = body.classList.contains('open');
+            const arrow = header.querySelector('span:last-child');
+
+            if (isOpen) {
+                body.classList.remove('open');
+                arrow.style.transform = 'rotate(0deg)';
+            } else {
+                body.classList.add('open');
+                arrow.style.transform = 'rotate(180deg)';
+            }
+        }
+    </script>
+</body>
+
+</html>
