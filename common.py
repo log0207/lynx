@@ -63,6 +63,10 @@ class TestingZone(Enum):
 class EventManager:
     def __init__(self):
         self.listeners: Dict[str, List[Callable]] = {}
+        self.main_loop = None
+
+    def set_loop(self, loop):
+        self.main_loop = loop
 
     def subscribe(self, event_type: str, callback: Callable):
         if event_type not in self.listeners:
@@ -98,13 +102,22 @@ class EventManager:
             for callback in self.listeners[event_type]:
                 if asyncio.iscoroutinefunction(callback):
                     try:
-                        loop = asyncio.get_event_loop()
-                        if loop.is_running():
+                        loop = self.main_loop
+                        if not loop:
+                            # Fallback logic
+                            try:
+                                loop = asyncio.get_running_loop()
+                            except RuntimeError:
+                                loop = asyncio.get_event_loop()
+
+                        if loop and loop.is_running():
                             asyncio.run_coroutine_threadsafe(callback(data), loop)
                         else:
-                            loop.run_until_complete(callback(data))
-                    except Exception:
-                        callback(data)
+                            # If no loop is running, we can't await a coroutine from sync context easily
+                            # unless we run it in a new loop, but that's risky.
+                            pass
+                    except Exception as e:
+                         pass
                 else:
                     callback(data)
 

@@ -16,154 +16,15 @@ from common import event_manager, print_banner, console
 from core import ScanEngine
 from reporter import Reporter
 from scanners import get_all_scanners, SQLiScanner, SeleniumXSSScanner
-
-class Dashboard:
-    def __init__(self):
-        self.logs = []
-        self.vulns = []
-        self.max_logs = 50
-        self.current_phase = "Initializing"
-        self.status_message = ""
-        self.start_time = None
-        self.total_scanners = 0
-        self.completed_scanners = 0
-        self.animation_frame = 0
-
-        self.active_requests = 0
-        self.total_requests = 0
-        self.failed_requests = 0
-        self.total_latency = 0
-        self.request_times = []
-
-        self.layout = Layout()
-        self.layout.split_column(
-            Layout(name="header", size=3),
-            Layout(name="body", ratio=1),
-            Layout(name="network", size=3),
-            Layout(name="footer", size=3)
-        )
-        self.layout["body"].split_row(
-            Layout(name="logs", ratio=1),
-            Layout(name="findings", ratio=1)
-        )
-
-    def set_scanner_count(self, count):
-        self.total_scanners = count
-        
-    def start_timer(self):
-        self.start_time = time.time()
-        
-    def get_elapsed_time(self):
-        if not self.start_time:
-            return 0
-        return time.time() - self.start_time
-        
-    def net_request_start(self, url):
-        self.active_requests += 1
-        self.total_requests += 1
-
-    def net_request_end(self, data):
-        self.active_requests = max(0, self.active_requests - 1)
-
-    def net_request_error(self, data):
-        self.active_requests = max(0, self.active_requests - 1)
-        self.failed_requests += 1
-
-    def add_log(self, message):
-        if "[Phase]" in message:
-            self.current_phase = message.split("]")[1].strip()
-        elif "[Status]" in message:
-            pass
-        
-        if "] Scan complete" in message:
-            self.completed_scanners += 1
-        
-        self.logs.append(message)
-        if len(self.logs) > self.max_logs:
-            self.logs.pop(0)
-
-    def add_vuln(self, data):
-        try:
-            self.add_log(f"[Debug] Adding vulnerability to dashboard: {data.get('type')} - {data.get('url')}")
-            self.vulns.append(data)
-        except Exception as e:
-            self.add_log(f"[red][Error] Failed to add vulnerability: {e}[/red]")
-
-    def generate_layout(self):
-        self.animation_frame = (self.animation_frame + 1) % 4
-        spinner_chars = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
-        spinner = spinner_chars[self.animation_frame % len(spinner_chars)]
-        
-        status_color = "cyan"
-        if "Vulnerability Scanning" in self.current_phase:
-            status_color = "red"
-        elif "Reporting" in self.current_phase:
-            status_color = "green"
-            
-        header_content = f"[bold {status_color}]{spinner} {self.current_phase}[/bold {status_color}]"
-        self.layout["header"].update(Panel(header_content, title="[bold white]Lynx v1.0 [BETA] - Active Scan[/bold white]", border_style=status_color))
-        
-        log_text = ""
-        visible_logs = self.logs[-15:]
-        for log in visible_logs:
-            if "[Phase]" in log:
-                log_text += f"[bold cyan]{log}[/bold cyan]\n"
-            elif "[Error]" in log:
-                log_text += f"[bold red]{log}[/bold red]\n"
-            elif "[AI]" in log:
-                log_text += f"[bold green]{log}[/bold green]\n"
-            elif "[Selenium]" in log:
-                 log_text += f"[bold magenta]{log}[/bold magenta]\n"
-            else:
-                log_text += f"{log}\n"
-        
-        self.layout["logs"].update(Panel(log_text, title="📜 Execution Logs (Last 15)", border_style="blue"))
-        
-        vuln_lines = []
-        for v in self.vulns[-10:]: 
-            color = "white"
-            icon = "🔹"
-            if v['severity'] == "P1": 
-                color = "red"
-                icon = "💥"
-            elif v['severity'] == "P2": 
-                color = "orange1"
-                icon = "🔥"
-            elif v['severity'] == "P3": 
-                color = "yellow"
-                icon = "⚠️"
-            elif v['severity'] == "P4": 
-                color = "cyan"
-                icon = "ℹ️"
-            
-            vuln_str = f"[{color}]{icon} {v['type']}[/{color}]"
-            if v.get('url'):
-                url = v['url']
-                if len(url) > 40: url = url[:37] + "..."
-                vuln_str += f"\n  [dim]{url}[/dim]"
-            vuln_lines.append(vuln_str)
-            
-        vuln_text = "\n\n".join(vuln_lines) if vuln_lines else "[dim]No vulnerabilities detected yet...[/dim]"
-        self.layout["findings"].update(Panel(vuln_text, title="🔥 Detected Vulnerabilities", border_style="red"))
-
-        net_text = f"Active Requests: [bold cyan]{self.active_requests}[/bold cyan] | Total Requests: [bold white]{self.total_requests}[/bold white] | Failed: [bold red]{self.failed_requests}[/bold red]"
-        self.layout["network"].update(Panel(net_text, title="📡 Network Monitor", border_style="magenta"))
-        
-        p1 = sum(1 for v in self.vulns if v['severity'] == 'P1')
-        p2 = sum(1 for v in self.vulns if v['severity'] == 'P2')
-        p3 = sum(1 for v in self.vulns if v['severity'] == 'P3')
-        p4 = sum(1 for v in self.vulns if v['severity'] == 'P4')
-        
-        stats = f"[bold red]P1: {p1}[/bold red] | [bold orange1]P2: {p2}[/bold orange1] | [bold yellow]P3: {p3}[/bold yellow] | [bold cyan]P4: {p4}[/bold cyan] | [bold white]Total: {len(self.vulns)}[/bold white]"
-        self.layout["footer"].update(Panel(stats, title="Live Statistics"))
-        
-        return self.layout
-
-
-dashboard = Dashboard()
+from updater import check_for_updates
+from ui import dashboard
 
 async def log_handler(message):
     dashboard.add_log(message)
+
+async def status_handler(data):
+    # Data is a dict of scanner_name: status
+    pass # Dashboard doesn't natively render this dict yet, we can add it to logs or specialized view if needed.
 
 async def vuln_handler(data):
     dashboard.add_log(f"[Debug] Received vulnerability event: {data.get('type')} - {data.get('url')}")
@@ -188,10 +49,25 @@ async def main_async():
     parser = argparse.ArgumentParser(description="Lynx v1.0 - VAPT Tool")
     parser.add_argument("-u", "--url", help="Target URL")
     parser.add_argument("--quick", action="store_true", help="Run a quick scan (no crawl)")
+    parser.add_argument("--update", action="store_true", help="Check for updates")
+    parser.add_argument("-s", "--scanner", help="Specific scanner to run (xss, sqli, full)", default="full")
     args = parser.parse_args()
 
+    if args.update:
+        check_for_updates(force=True)
+        return
+
     target = args.url
-    selected_scanners = get_all_scanners()
+    
+    # Select scanners based on argument
+    if args.scanner.lower() == "xss":
+        selected_scanners = [SeleniumXSSScanner]
+    elif args.scanner.lower() == "sqli":
+        selected_scanners = [SQLiScanner]
+    else:
+        selected_scanners = get_all_scanners()
+    
+    crawl_enabled = True
     crawl_enabled = True
 
     print_banner()
@@ -203,9 +79,10 @@ async def main_async():
         console.print("3. Custom: SQL Injection Only")
         console.print("4. Selenium XSS Scan (Dynamic)")
         console.print("5. Full Scan with AI Analysis")
-        
-        choice = Prompt.ask("Select an option", choices=["1", "2", "3", "4", "5"], default="1")
-        
+        console.print("6. Update Tool")
+
+        choice = Prompt.ask("Select an option", choices=["1", "2", "3", "4", "5", "6"], default="1")
+
         if choice == "1":
             selected_scanners = get_all_scanners()
             crawl_enabled = True
@@ -221,8 +98,10 @@ async def main_async():
         elif choice == "5":
             selected_scanners = get_all_scanners()
             crawl_enabled = True
-            os.environ["GEMINI_API_KEY"] = "AIzaSyAbrr1qN2qlSOGgBcYTdj-UwNZuzlAUpmI"
-            
+        elif choice == "6":
+            check_for_updates(force=True)
+            os._exit(0)
+
         target = Prompt.ask("[cyan]Enter target URL[/cyan]")
 
     if args.quick:
@@ -233,22 +112,23 @@ async def main_async():
     event_manager.subscribe("net_request_start", net_start_handler)
     event_manager.subscribe("net_request_end", net_end_handler)
     event_manager.subscribe("net_request_error", net_error_handler)
+    event_manager.subscribe("scanner_status", status_handler)
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    payloads_dir = os.path.join(base_dir, "payloads") 
-    
+    payloads_dir = os.path.join(base_dir, "payloads")
+
     engine = ScanEngine(target, selected_scanners, payloads_dir, crawl=crawl_enabled, ai_api_key=os.getenv("GEMINI_API_KEY"))
-    
+
     dashboard.set_scanner_count(len(selected_scanners))
     dashboard.start_timer()
 
-    with Live(dashboard.generate_layout(), refresh_per_second=4, screen=True) as live:
+    with Live(dashboard.generate_layout(), refresh_per_second=10, screen=True) as live:
         task = asyncio.create_task(engine.run())
-        
+
         try:
             while not task.done():
                 live.update(dashboard.generate_layout())
-                await asyncio.sleep(0.25)
+                await asyncio.sleep(0.1)
             await task
         except asyncio.CancelledError:
             pass
@@ -258,24 +138,31 @@ async def main_async():
             traceback.print_exc()
         finally:
             live.update(dashboard.generate_layout())
-        
+
     console.print("\n[bold]Scan Summary:[/bold]")
+
+    if engine.scanner_status:
+        console.print("\n[bold cyan]Module Execution Status:[/bold cyan]")
+        for name, status in engine.scanner_status.items():
+            color = "green" if status == "Completed" else "red" if status == "Failed" else "yellow"
+            console.print(f"- {name}: [{color}]{status}[/{color}]")
+
     if dashboard.vulns:
         p1 = sum(1 for v in dashboard.vulns if v['severity'] == 'P1')
         p2 = sum(1 for v in dashboard.vulns if v['severity'] == 'P2')
         p3 = sum(1 for v in dashboard.vulns if v['severity'] == 'P3')
         p4 = sum(1 for v in dashboard.vulns if v['severity'] == 'P4')
-        
-        console.print(f"[bold red]Found {len(dashboard.vulns)} vulnerabilities![/bold red]")
+
+        console.print(f"\n[bold red]Found {len(dashboard.vulns)} vulnerabilities![/bold red]")
         console.print(f"  [red]P1 (Critical): {p1}[/red]")
         console.print(f"  [orange1]P2 (High): {p2}[/orange1]")
         console.print(f"  [yellow]P3 (Medium): {p3}[/yellow]")
         console.print(f"  [cyan]P4 (Low): {p4}[/cyan]")
-        
+
         console.print("\n[bold]Findings:[/bold]")
         for v in dashboard.vulns:
             console.print(f"- [{v['severity']}] {v['type']} ({v.get('zone', 'Unknown')}): {v['url']}")
-            
+
         findings_data = {
             "scan_id": f"LYNX-{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}",
             "target": target,
@@ -290,15 +177,15 @@ async def main_async():
             },
             "findings": dashboard.vulns
         }
-        
+
         with open("findings.json", "w", encoding="utf-8") as f:
             json.dump(findings_data, f, indent=2)
         console.print(f"\n[bold cyan]Findings saved to: {os.path.abspath('findings.json')}[/bold cyan]")
-            
+
         mock_context = MockContext(target, dashboard.vulns, ai_summary=None)
         reporter = Reporter(mock_context)
         report_file = reporter.generate_report()
-        
+
         if report_file:
             console.print(f"[bold green]Report saved to: {os.path.abspath(report_file)}[/bold green]")
             try:
@@ -308,7 +195,10 @@ async def main_async():
             except Exception as e:
                 console.print(f"[dim]Could not remove findings.json: {e}[/dim]")
     else:
-        console.print("[bold green]No vulnerabilities found.[/bold green]")
+        if any(s == "Failed" for s in engine.scanner_status.values()):
+             console.print("[bold red]Scan completed with errors. No vulnerabilities found in successful modules.[/bold red]")
+        else:
+             console.print("[bold green]No vulnerabilities found.[/bold green]")
 
     if not task.cancelled():
         console.print("\n[dim]Press Enter to exit...[/dim]")
@@ -317,10 +207,16 @@ async def main_async():
         except:
             pass
 
+
 def main():
     try:
+        import sys
+        if "--update" not in sys.argv:
+             check_for_updates()
+
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
+        event_manager.set_loop(loop)
 
         task = loop.create_task(main_async())
         loop.run_until_complete(task)
